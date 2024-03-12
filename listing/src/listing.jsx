@@ -10,20 +10,118 @@ import { useEffect, useState } from "react";
 
 const Listing = () => {
 
+    const [agents, setAgents] = useState([]);
     const [listings, setListings] = useState([]);
+    const [selectedAgent, setSelectedAgent] = useState('');
+    const [selectedRoomType, setSelectedRoomType] = useState('');
+
+    const [propertyCategories, setPropertyCategories] = useState([]);
+    const [propertyTypes, setPropertyTypes] = useState([]);
+
+    const [selectedPropertyCategory, setSelectedPropertyCategory] = useState('');
+    const [selectedPropertyType, setSelectedPropertyType] = useState('');
+
+    const handlePropertyCategoryChange = (value) => {
+        setSelectedPropertyCategory(value);
+    };
+
+    const handlePropertyTypeChange = (value) => {
+        setSelectedPropertyType(value);
+    };
+
+    // const handlePropertyCategoryChange = (value) => {
+    //     setSelectedPropertyCategory(value);
+    // };
+
+    // const handlePropertyTypeChange = (value) => {
+    //     setSelectedPropertyType(value);
+    // };
+
+
+
+
+
+    const handleRoomTypeChange = (value) => {
+        setSelectedRoomType(value === selectedRoomType ? '' : value);
+    };
+
+
     useEffect(() => {
-        // Function to fetch listings
-        const fetchListings = async () => {
+        // Agent List
+        const fetchAgents = async () => {
             try {
-                const response = await axios.get('http://localhost:8081/listDetail');
-                setListings(response.data);
+                const response = await axios.get('http://localhost:8081/agents');
+                setAgents(response.data);
+            } catch (error) {
+                console.error('Error fetching agents:', error);
+            }
+        };
+        fetchAgents();
+
+        const fetchPropertyCategories = async () => {
+            try {
+                const response = await axios.get('http://localhost:8081/distinctPropertyCategories');
+                setPropertyCategories(response.data);
+            } catch (error) {
+                console.error('Error fetching property categories:', error);
+            }
+        };
+
+        const fetchPropertyTypes = async () => {
+            try {
+                const response = await axios.get('http://localhost:8081/distinctPropertyTypes');
+                setPropertyTypes(response.data);
+            } catch (error) {
+                console.error('Error fetching property types:', error);
+            }
+        };
+
+        fetchPropertyCategories();
+        fetchPropertyTypes();
+
+
+
+
+        // Function to fetch listings
+        const fetchListings = async (agentName = null) => {
+            try {
+                let url = 'http://localhost:8081/listDetail';
+
+                const params = new URLSearchParams();
+                if (agentName) {
+                    params.append('agent', agentName);
+                }
+                if (selectedPropertyCategory) {
+                    params.append('propertyCategory', selectedPropertyCategory);
+                }
+                if (selectedPropertyType) {
+                    params.append('propertyType', selectedPropertyType);
+                }
+
+                if (params.toString()) {
+                    url += `?${params.toString()}`;
+                }
+                const response = await axios.get(url);
+                const modifiedListings = response.data.map(listing => {
+                    return {
+                        ...listing,
+
+                        Is_Premium: listing.Is_Premium === "1" ? 'Premium' : 'Non-premium',
+                    };
+                });
+                setListings(modifiedListings);
             } catch (error) {
                 console.error('There was an error fetching the listings', error);
             }
         };
         // Call the fetchListings function on component mount
-        fetchListings();
-    }, []);
+        if (selectedAgent || selectedPropertyCategory || selectedPropertyType) {
+            fetchListings(selectedAgent);
+        } else {
+            fetchListings();
+        }
+    }, [selectedAgent, selectedPropertyCategory, selectedPropertyType]);
+
 
 
 
@@ -81,10 +179,7 @@ const Listing = () => {
                                     <button className="btn btn-outline-danger mt-md-0 mt-2" >Clear all
                                         Filter</button>
                                 </div>
-                                <div className="d-flex gap-3 align-items-center">
-                                    <a href="residential-add.php" className="btn btn-outline-primary btn-sm hideAndShowAccrodingtoUser d-none"><span><i className="fas fa-plus"></i></span> Add New</a>
-                                    <a href="downloadInventoryData.php?property_type=booking&amp;table=residential" className="btn text-primary btn-sm hideAndShowAccrodingtoUser d-none"><span><i className="fas fa-download"></i></span> Download Data</a>
-                                </div>
+
                             </div>
                         </div>
                         <div className="card-body ">
@@ -95,58 +190,57 @@ const Listing = () => {
                                         <div className="d-flex gap-2">
                                             <div className="d-inline">
                                                 <input className="form-check-input rd_chip_input"
-                                                    type="checkbox" name="chk_room_type[]" id="rdbhk_1" value="1" hidden />
+                                                    type="checkbox" name="chk_room_type[]" id="rdbhk_1" value="1 BHK" hidden onChange={() => handleRoomTypeChange('1 BHK')} />
                                                 <label className="rd_chip_tag" htmlFor="rdbhk_1">1 BHK</label>
                                             </div>
                                             <div className="d-inline">
                                                 <input className="form-check-input rd_chip_input"
-                                                    type="checkbox" name="chk_room_type[]" id="rdbhk_2" value="2" hidden />
+                                                    type="checkbox" name="chk_room_type[]" id="rdbhk_2" value="2 BHK" hidden onChange={() => handleRoomTypeChange('2 BHK')} />
                                                 <label className="rd_chip_tag" htmlFor="rdbhk_2">2 BHK</label>
                                             </div>
                                             <div className="d-inline">
                                                 <input className="form-check-input rd_chip_input"
-                                                    type="checkbox" name="chk_room_type[]" id="rdbhk_3" value="3" hidden />
+                                                    type="checkbox" name="chk_room_type[]" id="rdbhk_3" value='3 BHK' hidden onChange={() => handleRoomTypeChange('3 BHK')} />
                                                 <label className="rd_chip_tag" htmlFor="rdbhk_3">3 BHK</label>
-                                            </div>
-                                            <div className="d-inline">
-                                                <input className="form-check-input rd_chip_input"
-                                                    type="checkbox" name="chk_room_type[]" id="rdbhk_more" value="4" hidden />
-                                                <label className="rd_chip_tag" htmlFor="rdbhk_more">More +</label>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div className="ms-md-3 d-flex gap-2 align-items-center flex-wrap">
-                                        <label className="small">Furnishing</label>
-                                        <div className="d-flex gap-2 flex-wrap">
-                                            <div className="d-inline">
-                                                <input className="form-check-input rd_chip_input"
-                                                    type="radio" name="rd_f_status" id="rdUnfurnished" value="Unfurnished"
-                                                    hidden />
-                                                <label className="rd_chip_tag" htmlFor="rdUnfurnished">Unfurnished</label>
-                                            </div>
-                                            <div className="d-inline">
-                                                <input className="form-check-input rd_chip_input"
-                                                    type="radio" name="rd_f_status" id="rdSemiFurnished" value="Semi-Furnished"
-                                                    hidden />
-                                                <label className="rd_chip_tag" htmlFor="rdSemiFurnished">Semi-Furnished</label>
-                                            </div>
-                                            <div className="d-inline">
-                                                <input className="form-check-input rd_chip_input"
-                                                    type="radio" name="rd_f_status" id="rdFullyFurnished"
-                                                    value="Fully-Furnished" hidden />
-                                                <label className="rd_chip_tag" htmlFor="rdFullyFurnished">Fully-Furnished</label>
                                             </div>
 
                                         </div>
                                     </div>
+
                                     <div className="ms-md-2 d-flex gap-2 align-items-center flex-wrap">
                                         <label className="small">By Agent</label>
                                         <div className="d-flex gap-2 flex-wrap">
-                                            <select name="ddlAgentList" className="form-select" id="ddlAgentList">
-
+                                            <select name="ddlAgentList" className="form-select" id="ddlAgentList" onChange={(e) => setSelectedAgent(e.target.value)}>
+                                                <option value="">Select Agent</option>
+                                                {agents.map(agent => (
+                                                    <option key={agent} value={agent}>{agent}</option>
+                                                ))}
                                             </select>
                                         </div>
                                     </div>
+
+                                    <div className="ms-md-2 d-flex gap-2 align-items-center flex-wrap">
+                                        <label className="small">Property Category</label>
+                                        <select name="ddlPropertyCategory" className="form-select" onChange={(e) => handlePropertyCategoryChange(e.target.value)}>
+                                            <option value="">Select Property Category</option>
+                                            {propertyCategories.map(category => (
+                                                <option key={category} value={category}>{category}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+
+                                    <div className="ms-md-2 d-flex gap-2 align-items-center flex-wrap">
+                                        <label className="small">Property Type</label>
+                                        <select name="ddlPropertyType" className="form-select" onChange={(e) => handlePropertyTypeChange(e.target.value)}>
+                                            <option value="">Select Property Type</option>
+                                            {propertyTypes.map(type => (
+                                                <option key={type} value={type}>{type}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+
+
+
                                 </div>
                                 <div className="my-1">
                                     <div className="d-flex justify-content-md-start justify-content-start flex-wrap gap-2">
@@ -262,7 +356,7 @@ const Listing = () => {
                                                     <th scope="col" >Total Area</th>
                                                     <th scope="col" >Listed Date</th>
                                                     <th scope="col" >Expiry Date</th>
-                                                    <th scope="col" >Property Cateogry</th>
+                                                    <th scope="col" >Property Category</th>
                                                     <th scope="col" >Property Type</th>
                                                     <th scope="col" >Remark Section</th>
                                                     <th scope="col" >Created Date</th>
@@ -272,26 +366,31 @@ const Listing = () => {
                                                 </tr>
                                             </thead>
                                             <tbody>
-                                                {listings.map((listing) => (
-                                                    <tr key={listing.Id}>
-                                                        <td>{listing.ListingID}</td>
-                                                        <td>{listing.Title}</td>
-                                                        <td>{listing.Is_Premium}</td>
-                                                        <td>{listing.AssignedTo}</td>
-                                                        <td>{listing.Price}</td>
-                                                        <td>{listing.AreaType}</td>
-                                                        <td>{listing.TotalArea}</td>
-                                                        <td>{new Date(listing.ListedDate).toLocaleDateString()}</td>
-                                                        <td>{new Date(listing.ExpiryDate).toLocaleDateString()}</td>
-                                                        <td>{listing.PropertyCategory}</td>
-                                                        <td>{listing.PropertyType}</td>
-                                                        <td>{listing.RemarkID}</td>
-                                                        <td>{new Date(listing.CreatedDate).toLocaleDateString()}</td>
-                                                        <td>{listing.CreatedBy}</td>
-                                                        <td>{new Date(listing.ModifyDate).toLocaleDateString()}</td>
-                                                        <td>{listing.ModifyBy}</td>
-                                                    </tr>
-                                                ))}
+                                                {listings
+                                                    .filter((listing) => {
+                                                        return (selectedAgent === '' || listing.AssignedTo === selectedAgent) &&
+                                                            (selectedRoomType === '' || listing.Title.includes(selectedRoomType));
+                                                    })
+                                                    .map((listing) => (
+                                                        <tr key={listing.Id}>
+                                                            <td>{listing.ListingID}</td>
+                                                            <td>{listing.Title}</td>
+                                                            <td>{listing.Is_Premium}</td>
+                                                            <td>{listing.AssignedTo}</td>
+                                                            <td>{listing.Price}</td>
+                                                            <td>{listing.AreaType}</td>
+                                                            <td>{listing.TotalArea}</td>
+                                                            <td>{new Date(listing.ListedDate).toLocaleDateString()}</td>
+                                                            <td>{new Date(listing.ExpiryDate).toLocaleDateString()}</td>
+                                                            <td>{listing.PropertyCategory}</td>
+                                                            <td>{listing.PropertyType}</td>
+                                                            <td>{listing.RemarkID}</td>
+                                                            <td>{new Date(listing.CreatedDate).toLocaleDateString()}</td>
+                                                            <td>{listing.CreatedBy}</td>
+                                                            <td>{new Date(listing.ModifyDate).toLocaleDateString()}</td>
+                                                            <td>{listing.ModifyBy}</td>
+                                                        </tr>
+                                                    ))}
                                             </tbody>
 
                                         </table>

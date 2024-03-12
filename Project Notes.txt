@@ -1,0 +1,29 @@
+Task-I
+1. Total number of columns = 8 (from raw data - component__cGrey,component__blueLink,component__main_text,component__light_text 2,component__main_text 2,component__sub_wrap,component__main_text 3,component__main_text 4)
+2. Add 2 custom column (Property Category & Property Type)
+	2.1 Property Category 
+		2.1.1 If assigned to Vaibhav Kumar then it is Commerical property.
+		2.1.2 If assigned to (Rajesh Kumar, Deepak Bhadoria, Ghanshyam Kumar, Raj Kumar, Ram) agent then it is Residential property.
+		2.1.3 If assigned to other agent then it is Industrial Property.
+	2.2 Property Type
+		2.2.1 Search keywords (Sale, Lease, Rent) from title
+3. Updation of expiry date if change according to the unique id. 
+4. Remarks Table (Id, Project_id, Title, Date, Remarked_by)- make realtion with property table. 
+5. what type of the filter is required? - Discussed to be with Punnit sir. 
+Task-List:- 
+1. Login integration with validation (client as well as server side) (Login.php) -> 
+2. Listing page(All data should be shown in this page) (Sidebar menu include multiple page(Upload data,listing) (listing.php)
+	2.1. Applying filter page in the same page.
+	2.2. On click specify row goes to detail page.
+	2.3. On click remark button, pop up remark dialogue and submit to the database. 
+3. Upload Excel file (upload.php)
+	3.1. (2.1), (2.2) and (3) points should be considered.
+
+
+
+Task-II
+1. Swapping data from different column (Dealer and Owner).
+2. Required columns (tupleNew__locationName,tupleNew__ribbon,tupleNew__propType,tupleNew__bOld,tupleNew__priceValWrap,tupleNew__perSqftWrap,tupleNew__area1Type,tupleNew__area2Type,tupleNew__areaType,tupleNew__area1Type 2,tupleNew__area2Type 2,descPtag_undefined,tupleNew__pbL1,tupleNew__dot,tupleNew__pbL1 2,tupleNew__pbL2)
+3. what type of the filter is required? - Discussed to be with Punnit sir. 
+
+

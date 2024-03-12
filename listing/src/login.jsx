@@ -35,7 +35,7 @@ function Login() {
                 .then(res => {
                     console.log(res);
                     if (res.data.Status === "Success") {
-                        navigate('/dashboard')
+                        navigate('/listing')
                         console.log("Login Successful");
                     } else {
                         alert('Invalid credentials');

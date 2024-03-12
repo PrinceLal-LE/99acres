@@ -1,6 +1,6 @@
 import { Route, Routes } from 'react-router-dom'
 // import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
-// import Login from './login';
+import Login from './login';
 // import Home from './Home';
 // import Dashbord from './dashboard';
 // import Register from './Register';
@@ -13,8 +13,8 @@ function App() {
   return (
     <div className="app">
     <Routes>
-      {/* <Route  path='/Login' element={<Login />} />
-      <Route  path='/' element={<Home />} />
+      <Route  path='/Login' element={<Login />} />
+      {/* <Route  path='/' element={<Home />} />
       <Route  path='/dashboard' element={<Dashbord />} />
       <Route  path='/Register' element={<Register />} /> */}
       <Route  path='/Listing' element={<Listing />} />
