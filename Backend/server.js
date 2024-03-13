@@ -17,7 +17,9 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-
+// app.get('/',() => {
+//   console.log('hhhhh')
+// })
 
 app.listen(8081, () => {
   console.log("listening");
@@ -35,17 +37,106 @@ db.connect((err) => {
 });
 
 app.get("/listDetail", (req, res) => {
-  const sql = "SELECT * FROM listing";
+  let sql = "SELECT * FROM listing WHERE 1=1";
+  const { roomType, startDate, endDate, expiryStartDate, expiryEndDate, minTotalArea, maxTotalArea, areaUnit, agentName, propertyCategory, propertyType } = req.query;
+
+  if (roomType) {
+    sql += ` AND Title LIKE '%${roomType}%'`;
+  }
+
+  if (startDate && endDate) {
+    sql += ` AND ListedDate BETWEEN '${startDate}' AND '${endDate}'`;
+  }
+
+  if (expiryStartDate && expiryEndDate) {
+    sql += ` AND ExpiryDate BETWEEN '${expiryStartDate}' AND '${expiryEndDate}'`;
+  }
+
+  if (minTotalArea && maxTotalArea) {
+    sql += ` AND TotalArea BETWEEN ${minTotalArea} AND ${maxTotalArea}`;
+  }
+
+  if (areaUnit) {
+    sql += ` AND AreaUnit = '${areaUnit}'`;
+  }
+
+  if (agentName) {
+    sql += ` AND AssignedTo = '${agentName}'`;
+  }
+
+  if (propertyCategory) {
+    sql += ` AND PropertyCategory = '${propertyCategory}'`;
+  }
+
+  if (propertyType) {
+    sql += ` AND PropertyType = '${propertyType}'`;
+  }
+
   db.query(sql, (err, results) => {
     if (err) {
-      console.log(err);
-      res.status(500).send('Error on the server.');
+      console.error('Error fetching listings:', err);
+      res.status(500).send('Error fetching listings.');
     } else {
       res.json(results);
     }
   });
 });
 
+app.get("/agentList", (req, res) => {
+  let sql = "SELECT DISTINCT AssignedTo FROM listing";
+
+  db.query(sql, (err, results) => {
+    if (err) {
+      console.error('Error fetching agent list:', err);
+      res.status(500).send('Error fetching agent list.');
+    } else {
+      res.json(results.map(result => result.AssignedTo));
+    }
+  });
+});
+
+// Property Category Filter DataFetching
+app.get("/categoryList", (req, res) => {
+  let sql = "SELECT DISTINCT PropertyCategory FROM listing";
+
+  db.query(sql, (err, results) => {
+    if (err) {
+      console.error('Error fetching category list:', err);
+      res.status(500).send('Error fetching category list.');
+    } else {
+      res.json(results.map(result => result.PropertyCategory));
+    }
+  });
+});
+
+// Property Type Filter DataFetching
+// app.get("/typeList", (req, res) => {
+//   let sql = "SELECT DISTINCT PropertyType FROM listing";
+
+//   db.query(sql, (err, results) => {
+//     if (err) {
+//       console.error('Error fetching type list:', err);
+//       res.status(500).send('Error fetching type list.');
+//     } else {
+//       res.json(results.map(result => result.PropertyType));
+//     }
+//   });
+// });
+
+
+// app.get("/listDetail", (req, res) => {
+//   let sql = "SELECT * FROM listing";
+
+
+//   db.query(sql, (err, results) => {
+//     if (err) {
+//       console.error('Error fetching listings:', err);
+//       res.status(500).send('Error fetching listings.');
+//     } else {
+//       res.json(results);
+//     }
+//   });
+// });
 
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
@@ -88,6 +179,7 @@ app.post('/uploadExcel', upload.single('file'), (req, res) => {
                 break;
               case 'component__premiumTag':
                 data.Is_Premium = rowData[index] ? 1 : 0;
+                data.Is_Premium = data.Is_Premium === 1 ? 'Premium' : 'Non Premium';
                 break;
               case 'component__blueLink':
                 const assignedTo = rowData[index].split(':');
@@ -96,13 +188,36 @@ app.post('/uploadExcel', upload.single('file'), (req, res) => {
                 break;
               case 'component__main_text':
                 data.Price = rowData[index];
+
+                // Check if the Price contains 'Lacs' or 'crore'
+                if (data.Price.includes('Lac') || data.Price.includes('Crore')) {
+                  // Extract the numeric value from Price
+                  const numericValue = parseFloat(data.Price.replace(/[^\d.]/g, ''));
+
+                  // Convert the value to thousand
+                  let convertedPrice = numericValue;
+                  if (data.Price.includes('Lac')) {
+                    convertedPrice *= 100;
+                  } else if (data.Price.includes('Crore')) {
+                    convertedPrice *= 10000;
+                  }
+
+                  // Store the converted value in ConvertedPrice
+                  data.ConvertedPrice = convertedPrice;
+                } else {
+                  // If Price does not contain 'Lacs' or 'crore', remove 'Rs' and divide by 1000
+                  const numericValue = parseFloat(data.Price.replace(/[^\d.]/g, ''));
+                  data.ConvertedPrice = numericValue / 1000;
+                }
                 break;
               case 'component__light_text 2':
                 let areaType = rowData[index].replace(/^\|/, '').replace(/:$/, '');
                 data.AreaType = areaType.trim();
                 break;
               case 'component__main_text 2':
-                data.TotalArea = rowData[index];
+                let totalArea = rowData[index].split(' ');
+                data.TotalArea = totalArea.length > 1 ? totalArea[0].trim() : null;
+                data.AreaUnit = totalArea.length > 1 ? totalArea[1].trim() : null;
                 break;
               case 'component__sub_wrap':
                 data.ListingID = rowData[index].replace(':', '');
@@ -197,18 +312,20 @@ app.post('/uploadExcel', upload.single('file'), (req, res) => {
 
 
 
-app.get('/agents', (req, res) => {
-  const sql = "SELECT DISTINCT `AssignedTo` FROM `listing` WHERE `AssignedTo` IS NOT NULL";
-  db.query(sql, (err, results) => {
-    if (err) {
-      console.error('Error fetching agents:', err);
-      res.status(500).send('Error fetching agents.');
-    } else {
-      const agents = results.map(result => result.AssignedTo).filter(agent => agent !== null);
-      res.json(agents);
-    }
-  });
-});
+
+
+// app.get('/PropertyCategories', (req, res) => {
+//   const sql = "SELECT DISTINCT `PropertyCategory` FROM `listing` WHERE `PropertyCategory` IS NOT NULL";
+//   db.query(sql, (err, results) => {
+//     if (err) {
+//       console.error('Error fetching agents:', err);
+//       res.status(500).send('Error fetching agents.');
+//     } else {
+//       const categories = results.map(result => result.PropertyCategory).filter(category => category !== null);
+//       res.json(categories);
+//     }
+//   });
+// });
 
 // // Property Category filter
 // app.get('/propertyCategories', (req, res) => {
@@ -242,13 +359,13 @@ app.get('/agents', (req, res) => {
 // });
 
 // Code for checking the details of the users table.
-app.get('/users', (req, res) => {
-  const sql = "SELECT * FROM `users`";
-  db.query(sql, (err, data) => {
-    if (err) return res.json(err);
-    return res.json(data);
-  })
-})
+// app.get('/users', (req, res) => {
+//   const sql = "SELECT * FROM `users`";
+//   db.query(sql, (err, data) => {
+//     if (err) return res.json(err);
+//     return res.json(data);
+//   })
+// })
 
 
 
@@ -271,28 +388,28 @@ app.get('/users', (req, res) => {
 // })
 
 // Login Page
-app.post('/Login', (res, req) => {
-  const sql = "SELECT * FROM users WHERE LoginID = ?";
-  connection.query(sql, [req.body.txtuserName], (err, data) => {
-    if (err) return res.json({ Error: "Login error in server" });
-    if (data.length > 0) {
-      md5.compare(req.body.txtPassword.toString(), data[0].password, (err, response) => {
-        if (err) return res.json({ Error: "Password Companre error" });
-        if (response) {
-          return res.json({
-            Status: "Success"
-          });
-        } else {
-          return res.json({
-            Error: "Wrong Password"
-          })
-        }
-      })
-    } else {
-      return res.json({ Error: "No user existed." });
-    }
-  })
-})
+// app.post('/users', (res, req) => {
+//   const sql = "SELECT * FROM users WHERE LoginID = ?";
+//   connection.query(sql, [req.body.txtuserName], (err, data) => {
+//     if (err) return res.json({ Error: "Login error in server" });
+//     if (data.length > 0) {
+//       md5.compare(req.body.txtPassword.toString(), data[0].password, (err, response) => {
+//         if (err) return res.json({ Error: "Password Companre error" });
+//         if (response) {
+//           return res.json({
+//             Status: "Success"
+//           });
+//         } else {
+//           return res.json({
+//             Error: "Wrong Password"
+//           })
+//         }
+//       })
+//     } else {
+//       return res.json({ Error: "No user existed." });
+//     }
+//   })
+// })
 
 
 // LoginPage session code

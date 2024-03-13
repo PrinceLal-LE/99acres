@@ -5,123 +5,57 @@ import "./alert.css"
 import axios from "axios";
 import companyLogo from './assets/images/company_logo.jpg';
 import { useEffect, useState } from "react";
+// import { DateRangePicker } from "react-date-range";
+import 'react-date-range/dist/styles.css'; // main style file
+import 'react-date-range/dist/theme/default.css'; // theme css file
 // // import React from "react";
 // import '/loginPage.css';
 
 const Listing = () => {
 
-    const [agents, setAgents] = useState([]);
     const [listings, setListings] = useState([]);
+
+    const [agents, setAgents] = useState([]);
     const [selectedAgent, setSelectedAgent] = useState('');
-    const [selectedRoomType, setSelectedRoomType] = useState('');
 
-    const [propertyCategories, setPropertyCategories] = useState([]);
-    const [propertyTypes, setPropertyTypes] = useState([]);
+    const [categories, setCategories] = useState([]);
+    const [selectedCategories, setSelectedCategories] = useState('');
 
-    const [selectedPropertyCategory, setSelectedPropertyCategory] = useState('');
-    const [selectedPropertyType, setSelectedPropertyType] = useState('');
-
-    const handlePropertyCategoryChange = (value) => {
-        setSelectedPropertyCategory(value);
-    };
-
-    const handlePropertyTypeChange = (value) => {
-        setSelectedPropertyType(value);
-    };
-
-    // const handlePropertyCategoryChange = (value) => {
-    //     setSelectedPropertyCategory(value);
-    // };
-
-    // const handlePropertyTypeChange = (value) => {
-    //     setSelectedPropertyType(value);
-    // };
-
-
-
-
-
-    const handleRoomTypeChange = (value) => {
-        setSelectedRoomType(value === selectedRoomType ? '' : value);
-    };
-
+    const [filters, setFilters] = useState({
+        roomType: [],
+        listingDate: null,
+        expiryDate: null,
+        totalArea: null,
+        areaUnit: null,
+        agentName: null,
+        propertyCategory: null,
+        propertyType: null
+    });
+    const handleFilterChange = (filter, value) => {
+        setFilters({ ...filters, [filter]: value });
+    }
 
     useEffect(() => {
-        // Agent List
         const fetchAgents = async () => {
-            try {
-                const response = await axios.get('http://localhost:8081/agents');
-                setAgents(response.data);
-            } catch (error) {
-                console.error('Error fetching agents:', error);
-            }
+            const response = await axios.get('http://localhost:8081/agentList');
+            setAgents(response.data);
         };
+
+        const fetchCategories = async () => {
+            const response = await axios.get('http://localhost:8081/categoryList');
+            setCategories(response.data);
+        };
+
         fetchAgents();
-
-        const fetchPropertyCategories = async () => {
-            try {
-                const response = await axios.get('http://localhost:8081/distinctPropertyCategories');
-                setPropertyCategories(response.data);
-            } catch (error) {
-                console.error('Error fetching property categories:', error);
-            }
-        };
-
-        const fetchPropertyTypes = async () => {
-            try {
-                const response = await axios.get('http://localhost:8081/distinctPropertyTypes');
-                setPropertyTypes(response.data);
-            } catch (error) {
-                console.error('Error fetching property types:', error);
-            }
-        };
-
-        fetchPropertyCategories();
-        fetchPropertyTypes();
-
-
-
-
-        // Function to fetch listings
-        const fetchListings = async (agentName = null) => {
-            try {
-                let url = 'http://localhost:8081/listDetail';
-
-                const params = new URLSearchParams();
-                if (agentName) {
-                    params.append('agent', agentName);
-                }
-                if (selectedPropertyCategory) {
-                    params.append('propertyCategory', selectedPropertyCategory);
-                }
-                if (selectedPropertyType) {
-                    params.append('propertyType', selectedPropertyType);
-                }
-
-                if (params.toString()) {
-                    url += `?${params.toString()}`;
-                }
-                const response = await axios.get(url);
-                const modifiedListings = response.data.map(listing => {
-                    return {
-                        ...listing,
-
-                        Is_Premium: listing.Is_Premium === "1" ? 'Premium' : 'Non-premium',
-                    };
-                });
-                setListings(modifiedListings);
-            } catch (error) {
-                console.error('There was an error fetching the listings', error);
-            }
-        };
-        // Call the fetchListings function on component mount
-        if (selectedAgent || selectedPropertyCategory || selectedPropertyType) {
-            fetchListings(selectedAgent);
-        } else {
-            fetchListings();
+        fetchCategories();
+    }, []); // Empty dependency array to ensure the requests are made only once
+    useEffect(() => {
+        const fetchListings = async () => {
+            const response = await axios.get('http://localhost:8081/listDetail', { params: filters });
+            setListings(response.data);
         }
-    }, [selectedAgent, selectedPropertyCategory, selectedPropertyType]);
-
+        fetchListings();
+    }, [filters]);
 
 
 
@@ -189,59 +123,104 @@ const Listing = () => {
                                         <label className="small">Room</label>
                                         <div className="d-flex gap-2">
                                             <div className="d-inline">
+
                                                 <input className="form-check-input rd_chip_input"
-                                                    type="checkbox" name="chk_room_type[]" id="rdbhk_1" value="1 BHK" hidden onChange={() => handleRoomTypeChange('1 BHK')} />
+                                                    type="checkbox" name="chk_room_type[]" id="rdbhk_1" value="1 BHK" hidden onChange={(e) => handleFilterChange('roomType', e.target.checked ? [...filters.roomType, '1 BHK'] : filters.roomType.filter(type => type !== '1 BHK'))}
+                                                />
                                                 <label className="rd_chip_tag" htmlFor="rdbhk_1">1 BHK</label>
                                             </div>
                                             <div className="d-inline">
                                                 <input className="form-check-input rd_chip_input"
-                                                    type="checkbox" name="chk_room_type[]" id="rdbhk_2" value="2 BHK" hidden onChange={() => handleRoomTypeChange('2 BHK')} />
+                                                    type="checkbox" name="chk_room_type[]" id="rdbhk_2" value="2 BHK" hidden onChange={(e) => handleFilterChange('roomType', e.target.checked ? [...filters.roomType, '2 BHK'] : filters.roomType.filter(type => type !== '2 BHK'))} />
                                                 <label className="rd_chip_tag" htmlFor="rdbhk_2">2 BHK</label>
                                             </div>
                                             <div className="d-inline">
                                                 <input className="form-check-input rd_chip_input"
-                                                    type="checkbox" name="chk_room_type[]" id="rdbhk_3" value='3 BHK' hidden onChange={() => handleRoomTypeChange('3 BHK')} />
+                                                    type="checkbox" name="chk_room_type[]" id="rdbhk_3" value='3 BHK' hidden onChange={(e) => handleFilterChange('roomType', e.target.checked ? [...filters.roomType, '3 BHK'] : filters.roomType.filter(type => type !== '3 BHK'))} />
                                                 <label className="rd_chip_tag" htmlFor="rdbhk_3">3 BHK</label>
                                             </div>
 
                                         </div>
                                     </div>
 
+
+                                    {/* Filter by Listing date */}
+                                    <div className="ms-md-2 d-flex gap-2 align-items-center flex-wrap">
+                                        <label className="small">By Listing Date</label>
+                                        <div className="d-flex gap-2 flex-wrap">
+
+                                        </div>
+                                    </div>
+
+                                    {/* Filter by Expiry date */}
+                                    <div className="ms-md-2 d-flex gap-2 align-items-center flex-wrap">
+                                        <label className="small">By Expiry Date</label>
+                                        <div className="d-flex gap-2 flex-wrap">
+
+                                        </div>
+                                    </div>
+
+                                    {/* Property Type */}
+                                    <div className="ms-md-2 d-flex gap-2 align-items-center flex-wrap">
+                                        <label className="small">By Total Area</label>
+                                        <div className="d-flex gap-2 flex-wrap">
+
+                                        </div>
+                                    </div>
+
+                                    {/* Property Type */}
+                                    <div className="ms-md-2 d-flex gap-2 align-items-center flex-wrap">
+                                        <label className="small">By Area Unit</label>
+                                        <div className="d-flex gap-2 flex-wrap">
+
+                                        </div>
+                                    </div>
+
+                                    {/* Agent List */}
                                     <div className="ms-md-2 d-flex gap-2 align-items-center flex-wrap">
                                         <label className="small">By Agent</label>
                                         <div className="d-flex gap-2 flex-wrap">
-                                            <select name="ddlAgentList" className="form-select" id="ddlAgentList" onChange={(e) => setSelectedAgent(e.target.value)}>
+                                            <select name="ddlagentlist" className="form-select" id="ddlagentlist" value={selectedAgent}
+                                                onChange={(e) => {
+                                                    setSelectedAgent(e.target.value);
+                                                    handleFilterChange('agentName', e.target.value); // Update agentName in filters
+                                                }}>
                                                 <option value="">Select Agent</option>
-                                                {agents.map(agent => (
+                                                {agents.map((agent) => (
                                                     <option key={agent} value={agent}>{agent}</option>
                                                 ))}
                                             </select>
                                         </div>
                                     </div>
 
+                                    {/* Property Category */}
                                     <div className="ms-md-2 d-flex gap-2 align-items-center flex-wrap">
-                                        <label className="small">Property Category</label>
-                                        <select name="ddlPropertyCategory" className="form-select" onChange={(e) => handlePropertyCategoryChange(e.target.value)}>
-                                            <option value="">Select Property Category</option>
-                                            {propertyCategories.map(category => (
-                                                <option key={category} value={category}>{category}</option>
-                                            ))}
-                                        </select>
+                                        <label className="small">By Property Category</label>
+                                        <div className="d-flex gap-2 flex-wrap">
+                                            <select name="ddlpropertycategorylist" className="form-select" id="ddlpropertycategorylist" value={selectedCategories}
+                                                onChange={(e) => {
+                                                    setSelectedCategories(e.target.value);
+                                                    handleFilterChange('propertyCategory', e.target.value); // Update agentName in filters
+                                                }}>
+                                                <option value="">Select Property Category</option>
+                                                {categories.map((category) => (
+                                                    <option key={category} value={category}>{category}</option>
+                                                ))}
+                                            </select>
+                                        </div>
                                     </div>
 
+                                    {/* Property Type */}
                                     <div className="ms-md-2 d-flex gap-2 align-items-center flex-wrap">
-                                        <label className="small">Property Type</label>
-                                        <select name="ddlPropertyType" className="form-select" onChange={(e) => handlePropertyTypeChange(e.target.value)}>
-                                            <option value="">Select Property Type</option>
-                                            {propertyTypes.map(type => (
-                                                <option key={type} value={type}>{type}</option>
-                                            ))}
-                                        </select>
+                                        <label className="small">By Property Type</label>
+                                        <div className="d-flex gap-2 flex-wrap">
+                                            <select name="ddlpropertytypelist" className="form-select" id="ddlpropertytypelist ">
+
+                                            </select>
+                                        </div>
                                     </div>
-
-
-
                                 </div>
+
                                 <div className="my-1">
                                     <div className="d-flex justify-content-md-start justify-content-start flex-wrap gap-2">
                                         <div className="ms-md-3 d-flex gap-2 align-items-center flex-wrap">
@@ -354,6 +333,7 @@ const Listing = () => {
                                                     <th scope="col" >Price</th>
                                                     <th scope="col" >Area Type</th>
                                                     <th scope="col" >Total Area</th>
+                                                    <th scope="col" >Area Unit</th>
                                                     <th scope="col" >Listed Date</th>
                                                     <th scope="col" >Expiry Date</th>
                                                     <th scope="col" >Property Category</th>
@@ -367,10 +347,7 @@ const Listing = () => {
                                             </thead>
                                             <tbody>
                                                 {listings
-                                                    .filter((listing) => {
-                                                        return (selectedAgent === '' || listing.AssignedTo === selectedAgent) &&
-                                                            (selectedRoomType === '' || listing.Title.includes(selectedRoomType));
-                                                    })
+
                                                     .map((listing) => (
                                                         <tr key={listing.Id}>
                                                             <td>{listing.ListingID}</td>
@@ -380,6 +357,7 @@ const Listing = () => {
                                                             <td>{listing.Price}</td>
                                                             <td>{listing.AreaType}</td>
                                                             <td>{listing.TotalArea}</td>
+                                                            <td>{listing.AreaUnit}</td>
                                                             <td>{new Date(listing.ListedDate).toLocaleDateString()}</td>
                                                             <td>{new Date(listing.ExpiryDate).toLocaleDateString()}</td>
                                                             <td>{listing.PropertyCategory}</td>
