@@ -38,22 +38,65 @@ db.connect((err) => {
 
 app.get("/listDetail", (req, res) => {
   let sql = "SELECT * FROM listing WHERE 1=1";
-  const { roomType, startDate, endDate, expiryStartDate, expiryEndDate, minTotalArea, maxTotalArea, areaUnit, agentName, propertyCategory, propertyType } = req.query;
+  const { roomType, minTotalArea, maxTotalArea, areaUnit, agentName, propertyCategory, propertyType, fromExpiryDate, toExpiryDate, fromListedDate, toListedDate, minPrice, maxPrice, dateFilter } = req.query;
+
+  
 
   if (roomType) {
-    sql += ` AND Title LIKE '%${roomType}%'`;
+    const roomTypes = Array.isArray(roomType) ? roomType : [roomType];
+    const roomTypeConditions = roomTypes.map(type => {
+      if (type === '1 BHK') {
+        return `Title LIKE '%1 BHK%'`;
+      } else if (type === '2 BHK') {
+        return `Title LIKE '%2 BHK%'`;
+      } else if (type === '3 BHK') {
+        return `Title LIKE '%3 BHK%'`;
+      }
+    });
+    sql += ` AND (${roomTypeConditions.join(' OR ')})`;
   }
 
-  if (startDate && endDate) {
-    sql += ` AND ListedDate BETWEEN '${startDate}' AND '${endDate}'`;
+  // if (roomType) {
+  //   const roomTypes = Array.isArray(roomType) ? roomType : [roomType];
+  //   const roomTypeConditions = roomTypes.map(type => `Title LIKE '%${type}%'`);
+  //   sql += ` AND (${roomTypeConditions.join(' OR ')})`;
+  // }
+
+  if (fromExpiryDate && toExpiryDate) {
+    sql += ` AND ExpiryDate BETWEEN '${fromExpiryDate}' AND '${toExpiryDate}'`;
   }
 
-  if (expiryStartDate && expiryEndDate) {
-    sql += ` AND ExpiryDate BETWEEN '${expiryStartDate}' AND '${expiryEndDate}'`;
+  if (fromListedDate && toListedDate) {
+    sql += ` AND ListedDate BETWEEN DATE_FORMAT('${fromListedDate}', '%Y-%m-%d') AND DATE_FORMAT('${toListedDate}', '%Y-%m-%d')`;
+  }
+  // if (dateFilter) {
+  //   switch (dateFilter) {
+  //     case 'Today':
+  //       sql += " AND ListedDate = CURDATE()";
+  //       break;
+  //     case 'Yesterday':
+  //       sql += " AND ListedDate = DATE_SUB(CURDATE(), INTERVAL 1 DAY)";
+  //       break;
+  //     case 'LastWeek':
+  //       sql += " AND ListedDate >= DATE_SUB(CURDATE(), INTERVAL 1 WEEK) AND ListedDate <= CURDATE()";
+  //       break;
+  //     case 'LastMonth':
+  //       sql += " AND ListedDate >= DATE_SUB(CURDATE(), INTERVAL 1 MONTH) AND ListedDate <= CURDATE()";
+  //       break;
+  //     // Add case for 'Custom' or any other custom date range handling
+  //     default:
+  //       break;
+  //   }
+  // }
+
+  if (minPrice && maxPrice) {
+    sql += ` AND ConvertedPrice BETWEEN ${minPrice} AND ${maxPrice}`;
   }
 
-  if (minTotalArea && maxTotalArea) {
+  if (minTotalArea && maxTotalArea && minTotalArea <= 10000 && maxTotalArea <= 10000) {
     sql += ` AND TotalArea BETWEEN ${minTotalArea} AND ${maxTotalArea}`;
+  } else if (minTotalArea && minTotalArea > 10000) {
+    sql += ` AND TotalArea > 10000`;
   }
 
   if (areaUnit) {
@@ -68,9 +111,21 @@ app.get("/listDetail", (req, res) => {
     sql += ` AND PropertyCategory = '${propertyCategory}'`;
   }
 
+  // if (propertyType) {
+  //   sql += ` AND PropertyType = '${propertyType}'`;
+  // }
   if (propertyType) {
-    sql += ` AND PropertyType = '${propertyType}'`;
+    if (propertyType === 'Both') {
+      // Show all properties
+      sql += ` AND (PropertyType = 'Residential' OR PropertyType = 'Commercial')`;
+    } else {
+      // Filter by the selected property type
+      sql += ` AND PropertyType = '${propertyType}'`;
+    }
   }
+  
+
+
 
   db.query(sql, (err, results) => {
     if (err) {
@@ -110,33 +165,59 @@ app.get("/categoryList", (req, res) => {
 });
 
 // Property Type Filter DataFetching
-// app.get("/typeList", (req, res) => {
-//   let sql = "SELECT DISTINCT PropertyType FROM listing";
+app.get("/typeList", (req, res) => {
+  let sql = "SELECT DISTINCT PropertyType FROM listing";
 
-//   db.query(sql, (err, results) => {
-//     if (err) {
-//       console.error('Error fetching type list:', err);
-//       res.status(500).send('Error fetching type list.');
-//     } else {
-//       res.json(results.map(result => result.PropertyType));
-//     }
-//   });
-// });
+  db.query(sql, (err, results) => {
+    if (err) {
+      console.error('Error fetching type list:', err);
+      res.status(500).send('Error fetching type list.');
+    } else {
+      res.json(results.map(result => result.PropertyType));
+    }
+  });
+});
 
+// Area Unit Filter DataFetching
+app.get("/areaUnit", (req, res) => {
+  let sql = "SELECT DISTINCT AreaUnit FROM listing";
 
-// app.get("/listDetail", (req, res) => {
-//   let sql = "SELECT * FROM listing";
+  db.query(sql, (err, results) => {
+    if (err) {
+      console.error('Error fetching Area Unit:', err);
+      res.status(500).send('Error fetching Area Unit.');
+    } else {
+      res.json(results.map(result => result.AreaUnit));
+    }
+  });
+});
 
+// For ListingDate
+app.get("/listedDates", (req, res) => {
+  let sql = "SELECT ListedDate FROM listing";
 
-//   db.query(sql, (err, results) => {
-//     if (err) {
-//       console.error('Error fetching listings:', err);
-//       res.status(500).send('Error fetching listings.');
-//     } else {
-//       res.json(results);
-//     }
-//   });
-// });
+  db.query(sql, (err, results) => {
+    if (err) {
+      console.error('Error fetching dates:', err);
+      res.status(500).send('Error fetching dates.');
+    } else {
+      res.json(results);
+    }
+  });
+});
+
+// For Expiry Date
+app.get("/expiryDates", (req, res) => {
+
+  db.query(sql, (err, results) => {
+    if (err) {
+      console.error('Error fetching dates:', err);
+      res.status(500).send('Error fetching dates.');
+    } else {
+      res.json(results);
+    }
+  });
+});
 
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
@@ -167,6 +248,9 @@ app.post('/uploadExcel', upload.single('file'), (req, res) => {
             switch (header) {
               case 'component__cGrey':
                 data.Title = rowData[index];
+                data.Title = data.Title.replace(/,gurgaon/gi, '');
+                data.Title = data.Title.replace(/,Gurugram/gi, '');
+
                 if (data.Title.toLowerCase().includes('sale')) {
                   data.PropertyCategory = 'Sale';
                 } else if (data.Title.toLowerCase().includes('rent')) {
@@ -188,6 +272,7 @@ app.post('/uploadExcel', upload.single('file'), (req, res) => {
                 break;
               case 'component__main_text':
                 data.Price = rowData[index];
+                data.Price =data.Price.replace(/Rs/gi,'')
 
                 // Check if the Price contains 'Lacs' or 'crore'
                 if (data.Price.includes('Lac') || data.Price.includes('Crore')) {
@@ -350,7 +435,7 @@ app.post('/uploadExcel', upload.single('file'), (req, res) => {
 // });
 
 
-// Server Database connection code. 
+// Server Database connection code.
 // const connection = mysql.createConnection({
 //   host: "localhost",
 //   user: 'root',
@@ -369,7 +454,7 @@ app.post('/uploadExcel', upload.single('file'), (req, res) => {
 
 
 
-// Register Page server cide 
+// Register Page server cide
 // app.post('/register',(req, res) =>{
 //     const sql = "INSERT INTO users (`FirstName`,`LoginID`,`Password`) VALUES (?)";
 //     md5.hash(req.body.password.toString(), salt,(err, hash) => {

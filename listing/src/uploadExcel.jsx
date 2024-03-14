@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 
 const UploadExcel = () => {
     const [file, setFile] = useState(null);
+    const navigate = useNavigate(); // Initialize useHistory
 
     const handleChange = (event) => {
         setFile(event.target.files[0]);
@@ -25,6 +27,7 @@ const UploadExcel = () => {
             }
           });
           alert('File uploaded successfully.');
+          navigate('/listing');
         } catch (error) {
           console.error('Error uploading file:', error);
           alert('Error uploading file. Please try again.');
