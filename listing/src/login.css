@@ -1,13 +1,16 @@
-*{
+* {
     margin: 0px;
     padding: 0px;
+    font-family: "Segoe UI", "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
     /* background-color: rgb(153, 151, 151); */
 }
-body{
+
+body {
     background-color: #d0d0ce;
     /* height: 100vh; */
 }
-.loginContainer{
+
+.loginContainer {
     display: flex;
     height: 100vh;
     justify-content: center;
@@ -17,15 +20,17 @@ body{
     margin: 0px; */
 
 }
-.loginImages{
+
+.loginImages {
     width: 100%;
     height: 100%;
-    object-fit: cover;    
+    object-fit: cover;
     border-radius: 25px;
 
 
 }
-.loginColumn{
+
+.loginColumn {
     display: flex;
     /* width: 50%; */
     flex-direction: column;
@@ -33,21 +38,136 @@ body{
     align-items: center;
 }
 
-.loginRow{
+.loginRow {
     background-color: white;
     border-radius: 25px;
 }
-.logo{
+
+.logo {
     width: 80%;
     /* height: 100%; */
     object-fit: cover;
     /* padding: 10px; */
 }
-.creditinal{
+
+.creditinal {
     padding: 0px 30px;
 }
-.creditinal p{
+
+.creditinal p {
     display: flex;
     justify-content: center;
     font-size: 36px;
+}
+
+.row :right {
+    display: flex;
+    justify-content: center;
+    /* Align items horizontally to the center */
+    align-items: center;
+    /* Align items vertically to the center */
+}
+
+
+
+
+/* Update login card description */
+.login-card-description {
+    font-weight: bold;
+    font-size: 1.2rem;
+    /* Adjust size as needed */
+}
+
+/* Update Choose Account buttons */
+.btn-choose-account {
+    font-weight: bold;
+    font-size: 1rem;
+
+
+}
+
+
+
+
+
+/* Add styles for selected account type */
+.btn-account.selected {
+    background-color: rgb(136, 201, 223);
+    /* Blue color for selected button */
+
+    /* White text color for selected button */
+}
+
+/* Disable other account type button when one is selected */
+.btn-account:disabled {
+    opacity: 0.5;
+    /* Reduced opacity for disabled button */
+    cursor: not-allowed;
+    /* Cursor indicating disabled state */
+}
+
+
+.btn-account {
+
+    border: 1px solid #6c757d;
+    color: #6b6f73;
+    display: flex;
+    text-align: center;
+    /* Add some margin between buttons */
+    justify-content: space-between;
+    margin-left: 10%;
+    margin-right: 10%;
+    align-items: center;
+
+}
+
+.btn-account button {
+    flex-grow: 1;
+    /* Allow buttons to grow equally within the container */
+    text-align: center;
+
+
+}
+
+.button {
+    background: white;
+}
+
+/* Media query for responsiveness */
+@media (max-width: 768px) {
+    .btn-account {
+        width: 100%;
+
+        margin-right: 0;
+
+        margin-bottom: 10px;
+
+    }
+}
+
+.btn:hover {
+    border-color: #6c757d !important;
+}
+
+.btn a:hover {
+    color: black;
+}
+
+
+span.selected_chk {
+    width: 20px;
+    height: 20px;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    background: rgb(255 255 255 / 90%);
+    color: var(--bs-blue);
+    border-radius: 50%;
+    font-size: 12px;
+    margin-right: 5px;
+}
+
+
+.btn.active span.selected_chk {
+    display: inline-flex;
 }
