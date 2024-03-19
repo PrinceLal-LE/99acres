@@ -1,3 +1,6 @@
+*{
+  font-family: 'Poppins', sans-serif;
+}
 .vl_loader {
   border: 0.2em solid transparent;
   border-top-color: currentcolor;
@@ -517,6 +520,9 @@ input::-webkit-inner-spin-button {
 }
 
 .breadcrumb li:last-child a {
+  color: #6c757d;
+}
+.breadcrumb li:last-child a:hover{
   color: #0d6efd;
 }
 
@@ -668,74 +674,158 @@ tr {
   border: solid 0.5px rgb(223, 218, 218);
 }
 
-/* Slider */
-.min-max-slider {
+/* Hiding Title */
+/* .hover-details {
   position: relative;
-  width: 500px;
-  text-align: center;
+  display: inline-block;
 }
 
-.min-max-slider>label {
+.full-text {
+  display: none;
+  position: absolute;
+  background-color: white;
+  border: 1px solid #ddd;
+  padding: 10px;
+  z-index: 1;
+}
+
+.hover-details:hover .full-text {
+  display: block;
+} */
+
+/* .short-text {
+  transition: max-height 0.3s ease;
+}
+
+.hover-details:hover .short-text {
+  max-height: 999px;
+}
+
+.full-text {
   display: none;
 }
 
-span.value {
-  height: 1.7em;
-  font-weight: bold;
+.hover-details:hover .full-text {
+  display: block;
+}
+
+.hover-details:hover .short-text {
+  display: none;
+} */
+/* 
+.hover-details {
+  position: relative;
   display: inline-block;
 }
 
-span.value.lower::before {
-  content: "₹";
-  display: inline-block;
+.short-text {
+  transition: max-height 0.3s ease;
+  max-height: 40px;
+  overflow: hidden;
 }
 
-span.value.upper::before {
-  content: "- ₹";
-  display: inline-block;
-  margin-left: 0.4em;
-}
-
-.min-max-slider>.legend {
-  display: flex;
-  justify-content: space-between;
-}
-
-.min-max-slider>.legend>* {
-  font-size: small;
-  opacity: 0.25;
-}
-
-.min-max-slider>input {
-  cursor: pointer;
+.full-text {
+  display: none;
   position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: 1;
+  background-color: white;
+  padding: 5px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-/* webkit specific styling */
-.min-max-slider>input {
-  -webkit-appearance: none;
-  appearance: none;
-  outline: none !important;
-  background: transparent;
-  background-image: linear-gradient(to bottom, transparent 0%, transparent 30%, silver 30%, silver 60%, transparent 60%, transparent 100%);
+.hover-details:hover .short-text {
+  max-height: 0; 
 }
 
-.min-max-slider>input::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  /* Override default look */
-  appearance: none;
-  width: 14px;
-  /* Set a specific slider handle width */
-  height: 14px;
-  /* Slider handle height */
-  background: #eee;
-  /* Green background */
-  cursor: pointer;
-  /* Cursor on hover */
-  border: 1px solid gray;
-  border-radius: 100%;
+.hover-details:hover .full-text {
+  display: block;
+} */
+
+
+
+.hover-details {
+  position: relative;
+  display: inline-block;
 }
 
-.min-max-slider>input::-webkit-slider-runnable-track {
-  cursor: pointer;
+.short-text {
+  transition: max-height 0.3s ease;
+  max-height: 20px; /* Set the initial max-height to match your desired height */
+  overflow: hidden;
+}
+
+.full-text {
+  display: none;
+  position: absolute;
+  bottom: calc(100% + 10px); /* Position the tooltip below the short-text with some spacing */
+  /* left: 50%; */
+  /* transform: translateX(-50%); */
+  z-index: 1;
+  background-color: rgba(0, 0, 0, 1); /* Set the background color */
+  color: white; /* Set text color to white */
+  padding: 5px;
+  border-radius: 4px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.full-text::before {
+  content: '';
+  position: absolute;
+  top: 100%; /* Position the arrow at the bottom of the tooltip */
+  left: 50%;
+  transform: translateX(-50%);
+  border: 5px solid transparent;
+  border-top-color: rgb(0, 0, 0); /* Set the arrow color to match the tooltip background */
+}
+
+.hover-details:hover .short-text {
+  max-height: 0; /* Shrink the short-text on hover to reveal the full-text */
+}
+
+.hover-details:hover .full-text {
+  display: block;
+}
+
+
+
+.table>:not(caption)>*>* {  padding: 0.35rem 0.35rem !important;
+}
+thead > tr > th.dt-orderable-asc span.dt-column-order, table.dataTable thead > tr > th.dt-orderable-desc span.dt-column-order, table.dataTable thead > tr > th.dt-ordering-asc span.dt-column-order{
+  right: 0px ;
+}
+table.dataTable th.dt-type-numeric{
+  text-align: left;
+}
+
+.dt-type-numeric{
+  vertical-align: middle;
+  text-align: center !important;
+}
+
+div.dt-container div.dt-layout-row{
+  display: flex;
+  bottom: 0px;
+}
+.form-select{
+  width: auto !important;
+}
+.rs-picker-toggle-wrapper{
+display: inline-block;
+vertical-align: middle;
+width: 140px;
+}
+
+.rs-input ,span.rs-input-group-addon {
+  padding-top: 0.25rem !important;
+  padding-bottom: 0.25rem !important;
+  padding-left: 0.5rem !important;
+  font-size: .875rem;
+}
+
+span.rs-input-group-addon {
+  border-left: 1px solid #dee2e6 !important;
 }

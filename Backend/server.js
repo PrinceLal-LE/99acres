@@ -17,9 +17,6 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// app.get('/',() => {
-//   console.log('hhhhh')
-// })
 
 app.listen(8081, () => {
   console.log("listening");
@@ -38,9 +35,9 @@ db.connect((err) => {
 
 app.get("/listDetail", (req, res) => {
   let sql = "SELECT * FROM listing WHERE 1=1";
-  const { roomType, minTotalArea, maxTotalArea, areaUnit, agentName, propertyCategory, propertyType, fromExpiryDate, toExpiryDate, fromListedDate, toListedDate, minPrice, maxPrice, dateFilter } = req.query;
+  const { roomType, minTotalArea, maxTotalArea, areaUnit, agentName, propertyCategory, propertyType, fromExpiryDate, toExpiryDate, fromListedDate, toListedDate, minPrice, maxPrice, dateFilter,expiryDateFilter } = req.query;
 
-  
+
 
   if (roomType) {
     const roomTypes = Array.isArray(roomType) ? roomType : [roomType];
@@ -56,38 +53,43 @@ app.get("/listDetail", (req, res) => {
     sql += ` AND (${roomTypeConditions.join(' OR ')})`;
   }
 
-  // if (roomType) {
-  //   const roomTypes = Array.isArray(roomType) ? roomType : [roomType];
-  //   const roomTypeConditions = roomTypes.map(type => `Title LIKE '%${type}%'`);
-  //   sql += ` AND (${roomTypeConditions.join(' OR ')})`;
-  // }
 
   if (fromExpiryDate && toExpiryDate) {
     sql += ` AND ExpiryDate BETWEEN '${fromExpiryDate}' AND '${toExpiryDate}'`;
-  }
+}
 
   if (fromListedDate && toListedDate) {
     sql += ` AND ListedDate BETWEEN DATE_FORMAT('${fromListedDate}', '%Y-%m-%d') AND DATE_FORMAT('${toListedDate}', '%Y-%m-%d')`;
   }
-  // if (dateFilter) {
-  //   switch (dateFilter) {
-  //     case 'Today':
-  //       sql += " AND ListedDate = CURDATE()";
-  //       break;
-  //     case 'Yesterday':
-  //       sql += " AND ListedDate = DATE_SUB(CURDATE(), INTERVAL 1 DAY)";
-  //       break;
-  //     case 'LastWeek':
-  //       sql += " AND ListedDate >= DATE_SUB(CURDATE(), INTERVAL 1 WEEK) AND ListedDate <= CURDATE()";
-  //       break;
-  //     case 'LastMonth':
-  //       sql += " AND ListedDate >= DATE_SUB(CURDATE(), INTERVAL 1 MONTH) AND ListedDate <= CURDATE()";
-  //       break;
-  //     // Add case for 'Custom' or any other custom date range handling
-  //     default:
-  //       break;
-  //   }
-  // }
+
+  if (dateFilter === 'Today') {
+    sql += ` AND DATE(ListedDate) = CURDATE()`;
+  } else if (dateFilter === 'Yesterday') {
+    sql += ` AND DATE(ListedDate) = DATE_SUB(CURDATE(), INTERVAL 1 DAY)`;
+  } else if (dateFilter === 'This week') {
+    sql += ` AND YEARWEEK(ListedDate) = YEARWEEK(CURDATE())`;
+  } else if (dateFilter === 'This month') {
+    sql += ` AND MONTH(ListedDate) = MONTH(CURDATE()) AND YEAR(ListedDate) = YEAR(CURDATE())`;
+  } else if (dateFilter === 'Custom' && fromListedDate && toListedDate) {
+    sql += ` AND ListedDate BETWEEN '${fromListedDate}' AND '${toListedDate}'`;
+  }else if (dateFilter === ""){
+
+  }
+
+  if (expiryDateFilter === 'Today') {
+    sql += ` AND DATE(ExpiryDate) = CURDATE()`;
+} else if (expiryDateFilter === 'Yesterday') {
+    sql += ` AND DATE(ExpiryDate) = DATE_SUB(CURDATE(), INTERVAL 1 DAY)`;
+} else if (expiryDateFilter === 'This week') {
+    sql += ` AND YEARWEEK(ExpiryDate) = YEARWEEK(CURDATE())`;
+} else if (expiryDateFilter === 'This month') {
+    sql += ` AND MONTH(ExpiryDate) = MONTH(CURDATE()) AND YEAR(ExpiryDate) = YEAR(CURDATE())`;
+} else if (expiryDateFilter === 'Custom' && fromExpiryDate && toExpiryDate) {
+    sql += ` AND ExpiryDate BETWEEN '${fromExpiryDate}' AND '${toExpiryDate}'`;
+} else if (expiryDateFilter === "") {
+    // No date filter applied
+}
+  
 
   if (minPrice && maxPrice) {
     sql += ` AND ConvertedPrice BETWEEN ${minPrice} AND ${maxPrice}`;
@@ -123,7 +125,7 @@ app.get("/listDetail", (req, res) => {
       sql += ` AND PropertyType = '${propertyType}'`;
     }
   }
-  
+
 
 
 
@@ -136,6 +138,9 @@ app.get("/listDetail", (req, res) => {
     }
   });
 });
+
+
+
 
 app.get("/agentList", (req, res) => {
   let sql = "SELECT DISTINCT AssignedTo FROM listing";
@@ -248,8 +253,7 @@ app.post('/uploadExcel', upload.single('file'), (req, res) => {
             switch (header) {
               case 'component__cGrey':
                 data.Title = rowData[index];
-                data.Title = data.Title.replace(/,gurgaon/gi, '');
-                data.Title = data.Title.replace(/,Gurugram/gi, '');
+                data.Title = data.Title.replace(/,?(gurgaon|gurugram),?/gi, '');
 
                 if (data.Title.toLowerCase().includes('sale')) {
                   data.PropertyCategory = 'Sale';
@@ -261,19 +265,38 @@ app.post('/uploadExcel', upload.single('file'), (req, res) => {
                   data.PropertyCategory = ''; // Default value if no keyword is found
                 }
                 break;
-              case 'component__premiumTag':
-                data.Is_Premium = rowData[index] ? 1 : 0;
-                data.Is_Premium = data.Is_Premium === 1 ? 'Premium' : 'Non Premium';
+              case 'component__rubyTag':
+                data.Is_Premium = rowData[index] ? 'INFINITY' : '';
+
+                data.Is_Premium = data.Is_Premium === 'INFINITY' ? 'INFINITY' : 'Non- INFINITY';
                 break;
               case 'component__blueLink':
                 const assignedTo = rowData[index].split(':');
                 data.AssignedTo = assignedTo.length > 1 ? assignedTo[1].trim() : null;
                 data.PropertyType = assignedTo.length > 1 && assignedTo[1].toLowerCase().includes('vaibhav') ? 'Commercial' : 'Residential';
                 break;
+              case 'component__icon href':
+                data.Link = rowData[index];
+                break;
+              case 'CompletionChart__percentage':
+                // I have to add % value after the score value.
+                // data.Score = rowData[index] *100 + "%";
+                data.Score = rowData[index];
+                
+                break;
+              case 'hyperlinks_small':
+                data.MissingData = rowData[index];
+                break;
+              case 'component__light_text 10':
+                data.Credit = rowData[index];
+                break;
+              case 'component__percentile':
+                // data.LocalityPercentage = (rowData[index] * 100).toFixed(2) + '%';
+                data.LocalityPercentage = rowData[index];
+                break;
               case 'component__main_text':
                 data.Price = rowData[index];
-                data.Price =data.Price.replace(/Rs/gi,'')
-
+                data.Price = data.Price.replace(/Rs/gi, '')
                 // Check if the Price contains 'Lacs' or 'crore'
                 if (data.Price.includes('Lac') || data.Price.includes('Crore')) {
                   // Extract the numeric value from Price
@@ -286,7 +309,6 @@ app.post('/uploadExcel', upload.single('file'), (req, res) => {
                   } else if (data.Price.includes('Crore')) {
                     convertedPrice *= 10000;
                   }
-
                   // Store the converted value in ConvertedPrice
                   data.ConvertedPrice = convertedPrice;
                 } else {
@@ -298,6 +320,7 @@ app.post('/uploadExcel', upload.single('file'), (req, res) => {
               case 'component__light_text 2':
                 let areaType = rowData[index].replace(/^\|/, '').replace(/:$/, '');
                 data.AreaType = areaType.trim();
+                data.AreaType = data.AreaType.replace(/Area/gi, '');
                 break;
               case 'component__main_text 2':
                 let totalArea = rowData[index].split(' ');
@@ -328,13 +351,22 @@ app.post('/uploadExcel', upload.single('file'), (req, res) => {
                 const existingProperty = result[0];
                 const updateData = {};
                 if (existingProperty.Title !== data.Title) updateData.Title = data.Title;
+                if (existingProperty.Link !== data.Link) updateData.Link = data.Link;
                 if (existingProperty.Is_Premium !== data.Is_Premium) updateData.Is_Premium = data.Is_Premium;
                 if (existingProperty.AssignedTo !== data.AssignedTo) updateData.AssignedTo = data.AssignedTo;
                 if (existingProperty.Price !== data.Price) updateData.Price = data.Price;
+                if (existingProperty.ConvertedPrice !== data.ConvertedPrice) updateData.ConvertedPrice = data.ConvertedPrice;
                 if (existingProperty.AreaType !== data.AreaType) updateData.AreaType = data.AreaType;
                 if (existingProperty.TotalArea !== data.TotalArea) updateData.TotalArea = data.TotalArea;
+                if (existingProperty.AreaUnit !== data.AreaUnit) updateData.AreaUnit = data.AreaUnit;
                 if (existingProperty.ListedDate !== data.ListedDate) updateData.ListedDate = data.ListedDate;
                 if (existingProperty.ExpiryDate !== data.ExpiryDate) updateData.ExpiryDate = data.ExpiryDate;
+                if (existingProperty.PropertyCategory !== data.PropertyCategory) updateData.PropertyCategory = data.PropertyCategory;
+                if (existingProperty.PropertyType !== data.PropertyType) updateData.PropertyType = data.PropertyType;
+                if (existingProperty.Score !== data.Score) updateData.Score = data.Score;
+                if (existingProperty.MissingData	 !== data.MissingData	) updateData.MissingData	 = data.MissingData	;
+                if (existingProperty.Credit !== data.Credit) updateData.Credit = data.Credit;
+                if (existingProperty.LocalityPercentage	 !== data.LocalityPercentage	) updateData.LocalityPercentage	 = data.LocalityPercentage	;
 
                 // Update the existing property if any data needs to be updated
                 if (Object.keys(updateData).length > 0) {
@@ -350,7 +382,6 @@ app.post('/uploadExcel', upload.single('file'), (req, res) => {
                 }
               } else {
                 // Property with ListingID does not exist, insert new property
-                // Property with ListingID does not exist, insert new property
                 db.query("INSERT INTO `listing` SET ?", data, (err, result) => {
                   if (err) {
                     console.error('Error inserting row:', err);
@@ -363,17 +394,26 @@ app.post('/uploadExcel', upload.single('file'), (req, res) => {
               // Insert new properties into the database
               const insertValues = dataRows.map(row => [
                 row.Title,
+                row.Link,
                 row.Is_Premium,
                 row.AssignedTo,
                 row.Price,
+                row.ConvertedPrice,
                 row.AreaType,
                 row.TotalArea,
+                row.AreaUnit,
                 row.ListingID,
                 row.ListedDate,
-                row.ExpiryDate
+                row.ExpiryDate,
+                row.PropertyCategory,
+                row.PropertyType,
+                row.Score,
+                row.MissingData,
+                row.Credit,
+                row.LocalityPercentage
               ]);
               if (insertValues.length > 0) {
-                const sql = "INSERT INTO `listing` (`Title`, `Is_Premium`, `AssignedTo`, `Price`, `AreaType`, `TotalArea`, `ListingID`, `ListedDate`, `ExpiryDate`) VALUES ?";
+                const sql = "INSERT INTO `listing` (`Title`,`Link`, `Is_Premium`, `AssignedTo`, `Price`,`ConvertedPrice`, `AreaType`, `TotalArea`, `AreaUnit`, `ListingID`, `ListedDate`, `ExpiryDate`,`PropertyCategory`,`PropertyType`,`Score`,`MissingData`,`Credit`,`LocalityPercentage`) VALUES ?";
                 db.query(sql, [insertValues], (err, result) => {
                   if (err) {
                     console.error('Error inserting rows:', err);
@@ -394,121 +434,4 @@ app.post('/uploadExcel', upload.single('file'), (req, res) => {
       res.status(500).send('Error reading file.');
     });
 });
-
-
-
-
-
-// app.get('/PropertyCategories', (req, res) => {
-//   const sql = "SELECT DISTINCT `PropertyCategory` FROM `listing` WHERE `PropertyCategory` IS NOT NULL";
-//   db.query(sql, (err, results) => {
-//     if (err) {
-//       console.error('Error fetching agents:', err);
-//       res.status(500).send('Error fetching agents.');
-//     } else {
-//       const categories = results.map(result => result.PropertyCategory).filter(category => category !== null);
-//       res.json(categories);
-//     }
-//   });
-// });
-
-// // Property Category filter
-// app.get('/propertyCategories', (req, res) => {
-//   const query = 'SELECT DISTINCT PropertyCategory FROM `listing`';
-//   db.query(query, (error, results) => {
-//       if (error) {
-//           console.error('Error fetching property categories:', error);
-//           res.status(500).json({ error: 'Error fetching property categories' });
-//       } else {
-//           const categories = results.map(result => result.PropertyCategory);
-//           res.json(categories);
-//       }
-//   });
-// });
-
-
-
-
-
-// app.get("/getData", (req,res) => {
-//     res.send("Hello")
-// });
-
-
-// Server Database connection code.
-// const connection = mysql.createConnection({
-//   host: "localhost",
-//   user: 'root',
-//   password: '',
-//   database: "server_database"
-// });
-
-// Code for checking the details of the users table.
-// app.get('/users', (req, res) => {
-//   const sql = "SELECT * FROM `users`";
-//   db.query(sql, (err, data) => {
-//     if (err) return res.json(err);
-//     return res.json(data);
-//   })
-// })
-
-
-
-// Register Page server cide
-// app.post('/register',(req, res) =>{
-//     const sql = "INSERT INTO users (`FirstName`,`LoginID`,`Password`) VALUES (?)";
-//     md5.hash(req.body.password.toString(), salt,(err, hash) => {
-//         if (err) return res.json({ Error: "Error for hassing passowrd"});
-//         const values =  [
-//             req.body.FirstName,
-//             req.body.email,
-//             hash
-//         ]
-//         db.query(sql,values ,(err, result) =>{
-//             if (err) res.json({Error: "Inserting data in the server"});
-//             return res.json({Status : "Success"});
-//         })
-//     })
-
-// })
-
-// Login Page
-// app.post('/users', (res, req) => {
-//   const sql = "SELECT * FROM users WHERE LoginID = ?";
-//   connection.query(sql, [req.body.txtuserName], (err, data) => {
-//     if (err) return res.json({ Error: "Login error in server" });
-//     if (data.length > 0) {
-//       md5.compare(req.body.txtPassword.toString(), data[0].password, (err, response) => {
-//         if (err) return res.json({ Error: "Password Companre error" });
-//         if (response) {
-//           return res.json({
-//             Status: "Success"
-//           });
-//         } else {
-//           return res.json({
-//             Error: "Wrong Password"
-//           })
-//         }
-//       })
-//     } else {
-//       return res.json({ Error: "No user existed." });
-//     }
-//   })
-// })
-
-
-// LoginPage session code
-// app.post('/users',(req, res)=> {
-//     const sql = "SELECT * FROM users WHERE LoginID = ? and Password =?;";
-//     db.query(sql,[req.body.LoginID, req.body.Password],(err, result)=>{
-//         if(err) return res.json({Message: "Error inside server"});
-//         if(result.length>0){
-//             req.session.LoginID = result;
-//             req.session.FirstName = result[0].FirstName;
-//             console.log(req.session.FirstName)
-//             return res.json({Login:true, FirstName: req.session.FirstName})
-//         } else {
-//             return res.json({Login:false})
-//         }
-//     });
-// });
+  
